@@ -20,6 +20,7 @@ app:
   owner-phone: ${OWNER_PHONE:+998901234567}
   jwt-secret: ${JWT_SECRET:o-zingizning-uzun-maxfiy-kalitingiz-kamida-32-belgi}
   jwt-days: 7
+  public-url: ${PUBLIC_URL:}
   telegram:
     bot-token: ${TELEGRAM_BOT_TOKEN:}
     bot-username: ${TELEGRAM_BOT_USERNAME:}

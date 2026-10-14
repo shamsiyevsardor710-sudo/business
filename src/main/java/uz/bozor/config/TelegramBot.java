@@ -26,12 +26,15 @@ public class TelegramBot {
     private static final Logger log = LoggerFactory.getLogger(TelegramBot.class);
     private final String token;
     private final PendingRegRepository repo;
+    private final String publicUrl;
     private final HttpClient http = HttpClient.newHttpClient();
     private final ObjectMapper om = new ObjectMapper();
     private static final SecureRandom RNG = new SecureRandom();
 
-    public TelegramBot(@Value("${app.telegram.bot-token:}") String token, PendingRegRepository repo) {
+    public TelegramBot(@Value("${app.telegram.bot-token:}") String token, PendingRegRepository repo,
+                       @Value("${app.public-url:}") String publicUrl) {
         this.token = token;
+        this.publicUrl = publicUrl == null ? "" : publicUrl.trim();
         this.repo = repo;
     }
 
@@ -97,7 +100,7 @@ public class TelegramBot {
             String tk = parts.length > 1 ? parts[1].trim() : "";
             PendingReg p = tk.isEmpty() ? null : repo.findById(tk).orElse(null);
             if (p == null || expired(p)) {
-                send(chatId, "Salom! Ro'yxatdan o'tish uchun avval saytda ism, raqam va parolni kiritib, \"Davom etish\" tugmasini bosing.", null);
+                welcome(chatId, m.path("from").path("first_name").asText(""));
                 return;
             }
             p.setChatId(chatId);
@@ -107,8 +110,21 @@ public class TelegramBot {
                     "resize_keyboard", true, "one_time_keyboard", true);
             send(chatId, "Raqamingizni tasdiqlash uchun pastdagi tugmani bosing.", kb);
         } else {
-            send(chatId, "Ro'yxatdan o'tish uchun saytdagi \"Davom etish\" tugmasidan keyin chiqqan havola orqali kiring.", null);
+            welcome(chatId, m.path("from").path("first_name").asText(""));
         }
+    }
+
+    /** Oddiy /start: salom va "Do'konni ochish" tugmasi (sayt Telegram ichida Mini App bo'lib ochiladi). */
+    private void welcome(long chatId, String name) throws Exception {
+        String hi = (name == null || name.isBlank()) ? "Assalomu alaykum!" : "Assalomu alaykum, " + name + "! 👋";
+        String text = hi + "\n\nBozor — e'lonlar sayti. Pastdagi tugmani bosib do'konni oching.\n\n"
+                + "Ro'yxatdan o'tish yoki parolni tiklash uchun avval saytda \"Davom etish\" tugmasini bosing.";
+        Map<String, Object> kb = null;
+        if (!publicUrl.isBlank()) {
+            kb = Map.of("inline_keyboard",
+                    List.of(List.of(Map.of("text", "🛍 Do'konni ochish", "web_app", Map.of("url", publicUrl)))));
+        }
+        send(chatId, text, kb);
     }
 
     private static boolean expired(PendingReg p) {
