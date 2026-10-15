@@ -49,6 +49,13 @@ public class TelegramBot {
 
     private void loop() {
         try { call("deleteWebhook", Map.of()); } catch (Exception e) { log.warn("deleteWebhook: {}", e.getClass().getSimpleName()); }
+        if (!publicUrl.isBlank()) {   // botning "Do'kon" menyu tugmasi (BotFather'da sozlash shart emas)
+            try {
+                call("setChatMenuButton", Map.of("menu_button",
+                        Map.of("type", "web_app", "text", "Do'kon", "web_app", Map.of("url", publicUrl))));
+                log.info("Telegram menyu tugmasi o'rnatildi");
+            } catch (Exception e) { log.warn("setChatMenuButton: {}", e.getClass().getSimpleName()); }
+        }
         long offset = 0;
         while (true) {
             try {
